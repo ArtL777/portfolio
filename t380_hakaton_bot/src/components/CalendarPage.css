@@ -1,0 +1,306 @@
+.calendar-page {
+  width: 100%;
+}
+
+.calendar-header {
+  margin-bottom: 24px;
+}
+
+.calendar-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.month-year {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 0;
+}
+
+.button-small {
+  padding: 8px 16px;
+  font-size: 14px;
+}
+
+.calendar-container {
+  margin-bottom: 24px;
+}
+
+.calendar-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.weekday {
+  text-align: center;
+  font-weight: bold;
+  padding: 8px;
+  font-size: 14px;
+  color: #666;
+}
+
+.dark-theme .weekday {
+  color: #aaa;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  transition: all 0.2s;
+  background: white;
+}
+
+.dark-theme .calendar-day {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.calendar-day:hover {
+  background: #f0f0f0;
+  transform: scale(1.05);
+}
+
+.dark-theme .calendar-day:hover {
+  background: #333;
+}
+
+.calendar-day.empty {
+  cursor: default;
+  background: transparent;
+  border: none;
+}
+
+.calendar-day.today {
+  border: 2px solid #007bff;
+  background: rgba(0, 123, 255, 0.1);
+}
+
+.dark-theme .calendar-day.today {
+  background: rgba(77, 166, 255, 0.2);
+}
+
+.calendar-day.selected {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.dark-theme .calendar-day.selected {
+  background: #4da6ff;
+}
+
+.day-number {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.day-tasks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 10px;
+  margin-top: auto;
+}
+
+.tasks-count {
+  background: #007bff;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.completed-count {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.calendar-day.selected .tasks-count {
+  background: white;
+  color: #007bff;
+}
+
+.selected-date-tasks {
+  margin-top: 24px;
+}
+
+.selected-date-tasks h3 {
+  margin-bottom: 16px;
+}
+
+.tasks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.task-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.dark-theme .task-item {
+  background: rgba(255, 255, 255, 0.02);
+  border-color: #444;
+}
+
+.task-item.completed {
+  opacity: 0.6;
+  background: rgba(76, 175, 80, 0.1);
+}
+
+.dark-theme .task-item.completed {
+  background: rgba(76, 175, 80, 0.2);
+}
+
+.task-item-content {
+  flex: 1;
+}
+
+.task-item-time {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.dark-theme .task-item-time {
+  color: #aaa;
+}
+
+.task-item-name {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.task-item-location {
+  font-size: 12px;
+  color: #999;
+}
+
+.task-item.missed {
+  border-left: 4px solid #f44336;
+}
+
+.task-status-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.completed-badge {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.missed-badge {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.task-item-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.task-item .missed-button {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #f44336;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  color: #f44336;
+}
+
+.dark-theme .task-item .missed-button {
+  background: #2a2a2a;
+  border-color: #f44336;
+}
+
+.task-item .missed-button:hover {
+  background: #ffebee;
+}
+
+.dark-theme .task-item .missed-button:hover {
+  background: rgba(244, 67, 54, 0.2);
+}
+
+.task-item .missed-button.active {
+  background: #f44336;
+  border-color: #f44336;
+  color: white;
+}
+
+.task-item .complete-button {
+  width: 28px;
+  height: 28px;
+  border: 2px solid #007bff;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+}
+
+.dark-theme .task-item .complete-button {
+  background: #2a2a2a;
+  border-color: #4da6ff;
+}
+
+.task-item .complete-button:hover {
+  background: #e3f2fd;
+}
+
+.dark-theme .task-item .complete-button:hover {
+  background: rgba(77, 166, 255, 0.2);
+}
+
+.task-item .complete-button.checked {
+  background: #4caf50;
+  border-color: #4caf50;
+  color: white;
+}
+
+.no-tasks {
+  text-align: center;
+  color: #999;
+  font-style: italic;
+  padding: 20px;
+}
+

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Boss Rush — Босс на 60 секунд</title>
+  <!-- Yandex Games SDK — грузится синхронно до кода игры, чтобы window.YaGames
+       был готов к моменту main.js. Вне Яндекс Игр (локальная разработка,
+       другой хостинг) этот тег просто не догрузится — YandexSDK.js
+       обрабатывает отсутствие window.YaGames как штатный случай, без ошибок. -->
+  <script src="https://yandex.ru/games/sdk/v2"></script>
+  <style>
+    /* Пиксельные шрифты (ТЗ п.5 переработки интерфейса) — самохостинг вместо
+       CDN: Яндекс Игры грузятся в песочнице с ограниченным доступом к сети,
+       внешний CDN может не подгрузиться или притормозить при реальной публикации.
+       Press Start 2P — только латиница+кириллица, вес 400 (аркадный шрифт
+       однослойный по дизайну). Задаём unicode-range на каждый файл вручную,
+       т.к. сборка fontsource не публикует unicode-range в самих @font-face —
+       без него браузer возьмёт последний объявленный файл для ВСЕХ символов
+       и “срежет” кириллицу или наоборот. */
+    @font-face {
+      font-family: 'Press Start 2P';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('/assets/fonts/press-start-2p-latin-400.woff2') format('woff2');
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+    @font-face {
+      font-family: 'Press Start 2P';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('/assets/fonts/press-start-2p-cyrillic-400.woff2') format('woff2');
+      unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+    }
+    @font-face {
+      font-family: 'Pixelify Sans';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('/assets/fonts/pixelify-sans-latin-400.woff2') format('woff2');
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+    @font-face {
+      font-family: 'Pixelify Sans';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url('/assets/fonts/pixelify-sans-cyrillic-400.woff2') format('woff2');
+      unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+    }
+    @font-face {
+      font-family: 'Pixelify Sans';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url('/assets/fonts/pixelify-sans-latin-700.woff2') format('woff2');
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+    @font-face {
+      font-family: 'Pixelify Sans';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url('/assets/fonts/pixelify-sans-cyrillic-700.woff2') format('woff2');
+      unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #0d0d12;
+      overflow: hidden;
+      font-family: 'Pixelify Sans', monospace;
+    }
+
+    /* Desktop-композиция (ТЗ переработки интерфейса): игровое поле по центру,
+       свободное место по бокам отдаётся под HUD-панели вместо пустоты.
+       На узких экранах (мобильные/портретные) панели скрываются — портретный
+       Phaser-канвас как был единственным содержимым, так и остаётся. */
+    #layout {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 24px;
+    }
+    /* Phaser сам проставляет #game-container inline style="width:100%;height:100%"
+       (Scale.FIT центрирует канвас относительно РОДИТЕЛЯ и ожидает, что тот уже
+       имеет нужный размер) — если отдать эту роль самому #game-container внутри
+       flex-ряда, он расширяется на все 100% ширины #layout и выталкивает боковые
+       панели за экран (см. баг при проверке: bodyOverflowX). Поэтому размер
+       считает game-frame (по высоте окна, 9:16), а #game-container внутри него
+       просто заполняет уже готовый по размеру бокс своими 100%/100% — как Phaser
+       и ожидает. */
+    #game-frame {
+      flex: 0 0 auto;
+      width: min(56.25vh, 100vw);
+      aspect-ratio: 9 / 16;
+    }
+    #game-container {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* §1.6: на iOS долгий тап открывает системное меню (копировать/сохранить
+         картинку) даже когда JS 'contextmenu' уже отменён — preventDefault там
+         не покрывает нативный -webkit-touch-callout. Плюс запрет выделения
+         текста/картинок канваса при перетаскивании пальцем во время боя. */
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    .hud-panel {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      width: 280px;
+      height: min(90vh, 1120px);
+      color: #e8e4d8;
+    }
+    /* Порог по ширине окна, а не по канвасу — панели появляются только когда
+       реально есть куда их положить, не сжимая игровое поле (ТЗ п.8). */
+    @media (min-width: 1300px) {
+      .hud-panel { display: flex; }
+    }
+
+    /* Пиксельная рамка со ступенчатыми (нотч) углами вместо скруглённых —
+       предыдущая версия карточек/панелей ("реалистичный камень") была прямо
+       отклонена в ТЗ как несоответствующая pixel-art стилю. Двойной слой:
+       ::before чуть больше и другого цвета — читается как обводка/бортик. */
+    .pixel-box {
+      position: relative;
+      background: #1b1b28;
+      padding: 14px;
+      clip-path: polygon(0 8px, 8px 8px, 8px 0, calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px));
+    }
+    .pixel-box::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      background: #35354e;
+      z-index: -1;
+      clip-path: polygon(0 8px, 8px 8px, 8px 0, calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px));
+    }
+    .pixel-box__title {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 13px;
+      color: #ffcc00;
+      margin: 0 0 12px;
+      letter-spacing: 1px;
+    }
+    .pixel-divider {
+      height: 4px;
+      margin: 16px 0;
+      background: repeating-linear-gradient(90deg, #35354e 0 6px, transparent 6px 12px);
+    }
+    .hud-row + .hud-row { margin-top: 12px; }
+    .hud-row__label {
+      font-family: 'Pixelify Sans', monospace;
+      font-size: 15px;
+      color: #9aa0b4;
+      margin-bottom: 5px;
+    }
+    .hud-row__value {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 15px;
+      color: #ffffff;
+      display: block;
+      margin-top: 5px;
+      text-align: right;
+    }
+    .pixel-bar {
+      height: 16px;
+      background: #14141d;
+      border: 2px solid #000;
+      image-rendering: pixelated;
+    }
+    .pixel-bar__fill {
+      height: 100%;
+    }
+    .stat-line {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Pixelify Sans', monospace;
+      font-size: 16px;
+      color: #e8e4d8;
+      margin-bottom: 8px;
+    }
+    .stat-line__value {
+      color: #ffcc00;
+      font-weight: 700;
+    }
+    .upgrade-empty {
+      font-family: 'Pixelify Sans', monospace;
+      font-size: 15px;
+      color: #6a6f83;
+    }
+    .upgrade-item {
+      font-family: 'Pixelify Sans', monospace;
+      font-size: 15px;
+      color: #e8e4d8;
+      margin-bottom: 8px;
+      padding-left: 8px;
+      border-left: 3px solid #ffcc00;
+    }
+    /* Супersэмплинг для HTML-текста (жалоба "мылится/расплывчато") — рисуем
+       вдвое крупнее (2em) и сжимаем обратно через zoom:0.5. В отличие от
+       transform:scale(), zoom реально меняет раскладку (не ломает flex/margin
+       соседей), но растеризация шрифта происходит на удвоенном кегле — эффект
+       тот же, что и resolution:3 у Phaser-текста в канвасе. zoom — нестандартное
+       свойство, но поддержано во всех Chromium-браузерах (в т.ч. вебвью Яндекс
+       Игр); в Firefox просто не сработает, текст останется как раньше — не хуже,
+       без поломки. Оборачиваем только сам текст, не контейнер с margin/border,
+       чтобы zoom не ужал отступы и рамки соседних элементов вдвое.
+       Прежний вариант (только рост font-size без этого) не спасал от мыла —
+       браузер всё равно сглаживал контуры пиксельного шрифта на маленьком кегле. */
+    .crisp {
+      display: inline-block;
+      font-size: 2em;
+      zoom: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div id="layout">
+    <aside id="hud-left" class="hud-panel"></aside>
+    <div id="game-frame"><div id="game-container"></div></div>
+    <aside id="hud-right" class="hud-panel"></aside>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
